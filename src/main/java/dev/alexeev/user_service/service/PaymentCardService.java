@@ -10,6 +10,7 @@ import dev.alexeev.user_service.mapper.PaymentCardMapper;
 import dev.alexeev.user_service.repository.PaymentCardRepository;
 import dev.alexeev.user_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class PaymentCardService {
+
+  private static final String USER_WITH_CARDS_CACHE = "userWithCards";
 
   private final PaymentCardRepository paymentCardRepository;
   private final UserRepository userRepository;
@@ -38,6 +41,7 @@ public class PaymentCardService {
     return paymentCardMapper.toDtoList(paymentCardRepository.findByUserId(userId));
   }
 
+  @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#request.userId")
   @Transactional
   public PaymentCardResponseDto create(PaymentCardCreateRequest request) {
     User user = userRepository.findById(request.getUserId())
@@ -52,6 +56,7 @@ public class PaymentCardService {
     return paymentCardMapper.toDto(paymentCardRepository.save(card));
   }
 
+  @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#result.userId")
   @Transactional
   public PaymentCardResponseDto update(Long id, PaymentCardUpdateRequest request) {
     PaymentCard card = paymentCardRepository.findById(id)
@@ -62,9 +67,14 @@ public class PaymentCardService {
 
   @Transactional
   public void delete(Long id) {
-    if (!paymentCardRepository.existsById(id)) {
-      throw new PaymentCardNotFoundException(id);
-    }
+    PaymentCard card = paymentCardRepository.findById(id)
+            .orElseThrow(() -> new PaymentCardNotFoundException(id));
+    Long userId = card.getUser().getId();
     paymentCardRepository.deleteById(id);
+    evictUserCache(userId);
+  }
+
+  @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#userId")
+  public void evictUserCache(Long userId) {
   }
 }

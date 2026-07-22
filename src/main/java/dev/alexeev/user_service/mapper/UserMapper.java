@@ -3,12 +3,13 @@ package dev.alexeev.user_service.mapper;
 import dev.alexeev.user_service.dto.user.UserCreateRequest;
 import dev.alexeev.user_service.dto.user.UserResponseDto;
 import dev.alexeev.user_service.dto.user.UserUpdateRequest;
+import dev.alexeev.user_service.dto.user.UserWithCardsResponseDto;
 import dev.alexeev.user_service.entity.User;
 import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = PaymentCardMapper.class)
 public interface UserMapper {
 
   UserResponseDto toDto(User user);
@@ -27,4 +28,5 @@ public interface UserMapper {
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "cards", ignore = true)
   void updateEntityFromDto(UserUpdateRequest request, @MappingTarget User user);
+  UserWithCardsResponseDto toDtoWithCards(User user);
 }
