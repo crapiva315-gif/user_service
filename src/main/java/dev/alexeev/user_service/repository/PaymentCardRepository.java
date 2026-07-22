@@ -9,5 +9,4 @@ import java.util.Optional;
 
 public interface PaymentCardRepository extends JpaRepository<PaymentCard, Long> {
   List<PaymentCard> findByUserId(Long userId);
-  Optional<User> findByEmail(String email);
 }
