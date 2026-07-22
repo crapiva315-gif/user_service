@@ -1,6 +1,8 @@
 package dev.alexeev.user_service.config;
 
 import java.time.Duration;
+
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -10,13 +12,13 @@ import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializ
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 
 @Configuration
+@EnableCaching
 public class RedisCacheConfig {
 
   @Bean
   public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 
-    // Современный безопасный сериализатор, заменивший GenericJackson2JsonRedisSerializer.
-    // По умолчанию поддерживает java.time.* (включаюя LocalDateTime) и защищен от RCE.
+
     GenericJacksonJsonRedisSerializer serializer = GenericJacksonJsonRedisSerializer.create(configure -> {});
 
     RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
