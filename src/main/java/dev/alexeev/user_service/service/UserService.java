@@ -2,9 +2,10 @@ package dev.alexeev.user_service.service;
 
 import dev.alexeev.user_service.dto.user.*;
 import dev.alexeev.user_service.entity.User;
+import dev.alexeev.user_service.exception.DuplicateEmailException;
+import dev.alexeev.user_service.exception.UserNotFoundException;
 import dev.alexeev.user_service.mapper.UserMapper;
 import dev.alexeev.user_service.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +22,7 @@ public class UserService {
   @Transactional(readOnly = true)
   public UserResponseDto getById(Long id) {
     User user = userRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("User with id=" + id + " not found"));
+            .orElseThrow(() -> new UserNotFoundException(id));
     return userMapper.toDto(user);
   }
 
@@ -32,6 +33,9 @@ public class UserService {
 
   @Transactional
   public UserResponseDto create(UserCreateRequest request) {
+    if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+      throw new DuplicateEmailException(request.getEmail());
+    }
     User user = userMapper.toEntity(request);
     return userMapper.toDto(userRepository.save(user));
   }
@@ -39,7 +43,7 @@ public class UserService {
   @Transactional
   public UserResponseDto update(Long id, UserUpdateRequest request) {
     User user = userRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("User with id=" + id + " not found"));
+            .orElseThrow(() -> new UserNotFoundException(id));
     userMapper.updateEntityFromDto(request, user);
     return userMapper.toDto(user);
   }
@@ -47,7 +51,7 @@ public class UserService {
   @Transactional
   public void delete(Long id) {
     if (!userRepository.existsById(id)) {
-      throw new EntityNotFoundException("User with id=" + id + " not found");
+      throw new UserNotFoundException(id);
     }
     userRepository.deleteById(id);
   }
