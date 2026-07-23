@@ -45,9 +45,8 @@ class UserIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
-
-  @Autowired
-  private ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper = new ObjectMapper()
+          .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
   @Test
   void fullFlow_createUser_addCard_getWithCards_update_delete() throws Exception {
