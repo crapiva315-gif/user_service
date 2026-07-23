@@ -40,13 +40,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
+      SPRING_PROFILES_ACTIVE: docker
       DB_NAME: ${DB_NAME:-user_service_db}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
 
 volumes:
   postgres_data:
