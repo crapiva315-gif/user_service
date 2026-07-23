@@ -18,6 +18,9 @@
 		<java.version>21</java.version>
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
 		<lombok.version>1.18.42</lombok.version>
+		<sonar.organization>crapiva315-gif</sonar.organization>
+		<sonar.projectKey>crapiva315-gif_user_service</sonar.projectKey>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 	</properties>
 	<dependencies>
 		<dependency>
