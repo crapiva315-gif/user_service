@@ -40,6 +40,11 @@ public class GlobalExceptionHandler {
     return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
   }
 
+  @ExceptionHandler(MaxCardsLimitExceededException.class)
+  public ResponseEntity<Map<String, Object>> handleMaxCardsLimitExceeded(MaxCardsLimitExceededException ex) {
+    return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
     Map<String, String> errors = new LinkedHashMap<>();
