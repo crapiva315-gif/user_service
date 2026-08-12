@@ -11,10 +11,10 @@ import dev.alexeev.user_service.repository.PaymentCardRepository;
 import dev.alexeev.user_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,11 +34,12 @@ public class PaymentCardService {
   }
 
   @Transactional(readOnly = true)
-  public List<PaymentCardResponseDto> getByUserId(Long userId) {
+  public Page<PaymentCardResponseDto> getByUserId(Long userId, Pageable pageable) {
     if (!userRepository.existsById(userId)) {
       throw new UserNotFoundException(userId);
     }
-    return paymentCardMapper.toDtoList(paymentCardRepository.findByUserId(userId));
+    return paymentCardRepository.findByUserId(userId, pageable)
+            .map(paymentCardMapper::toDto);
   }
 
   @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#request.userId")
@@ -65,16 +66,13 @@ public class PaymentCardService {
     return paymentCardMapper.toDto(card);
   }
 
+  @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#result")
   @Transactional
-  public void delete(Long id) {
+  public Long delete(Long id) {
     PaymentCard card = paymentCardRepository.findById(id)
             .orElseThrow(() -> new PaymentCardNotFoundException(id));
     Long userId = card.getUser().getId();
     paymentCardRepository.deleteById(id);
-    evictUserCache(userId);
-  }
-
-  @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#userId")
-  public void evictUserCache(Long userId) {
+    return userId;
   }
 }
