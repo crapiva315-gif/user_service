@@ -167,4 +167,45 @@ class UserIntegrationTest {
             .andExpect(jsonPath("$.content", hasSize(1)))
             .andExpect(jsonPath("$.content[0].surname").value("Sidorov"));
   }
+
+  @Test
+  void createCard_shouldReturnConflict_whenUserAlreadyHasFiveCards() throws Exception {
+    UserCreateRequest userRequest = new UserCreateRequest();
+    userRequest.setName("Card");
+    userRequest.setSurname("Limit");
+    userRequest.setEmail("card.limit@example.com");
+    userRequest.setBirthDate(LocalDate.of(1990, 1, 1));
+
+    String userResponse = mockMvc.perform(post("/api/v1/users")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(userRequest)))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+
+    Long userId = objectMapper.readTree(userResponse).get("id").asLong();
+
+    for (int i = 0; i < 5; i++) {
+      PaymentCardCreateRequest cardRequest = new PaymentCardCreateRequest();
+      cardRequest.setUserId(userId);
+      cardRequest.setNumber("411111111111111" + i);
+      cardRequest.setHolder("CARD LIMIT");
+      cardRequest.setExpirationDate(LocalDate.of(2028, 5, 1));
+
+      mockMvc.perform(post("/api/v1/cards")
+                      .contentType("application/json")
+                      .content(objectMapper.writeValueAsString(cardRequest)))
+              .andExpect(status().isCreated());
+    }
+
+    PaymentCardCreateRequest sixthCard = new PaymentCardCreateRequest();
+    sixthCard.setUserId(userId);
+    sixthCard.setNumber("4111111111111199");
+    sixthCard.setHolder("CARD LIMIT");
+    sixthCard.setExpirationDate(LocalDate.of(2028, 5, 1));
+
+    mockMvc.perform(post("/api/v1/cards")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(sixthCard)))
+            .andExpect(status().isConflict());
+  }
 }

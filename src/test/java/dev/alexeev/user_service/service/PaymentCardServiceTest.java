@@ -5,6 +5,7 @@ import dev.alexeev.user_service.dto.card.PaymentCardResponseDto;
 import dev.alexeev.user_service.entity.PaymentCard;
 import dev.alexeev.user_service.entity.User;
 import dev.alexeev.user_service.exception.InactiveUserException;
+import dev.alexeev.user_service.exception.MaxCardsLimitExceededException;
 import dev.alexeev.user_service.exception.PaymentCardNotFoundException;
 import dev.alexeev.user_service.exception.UserNotFoundException;
 import dev.alexeev.user_service.mapper.PaymentCardMapper;
@@ -111,6 +112,40 @@ class PaymentCardServiceTest {
             .isInstanceOf(InactiveUserException.class);
 
     verify(paymentCardRepository, never()).save(any());
+  }
+  @Test
+  void create_shouldThrowException_whenUserAlreadyHasMaxCards() {
+    PaymentCardCreateRequest request = new PaymentCardCreateRequest();
+    request.setUserId(1L);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(paymentCardRepository.countByUserId(1L)).thenReturn(5L);
+
+    assertThatThrownBy(() -> paymentCardService.create(request))
+            .isInstanceOf(MaxCardsLimitExceededException.class)
+            .hasMessageContaining("1");
+
+    verify(paymentCardRepository, never()).save(any());
+  }
+
+  @Test
+  void create_shouldSaveCard_whenUserHasFourCards() {
+    PaymentCardCreateRequest request = new PaymentCardCreateRequest();
+    request.setUserId(1L);
+    request.setNumber("4111111111111111");
+    request.setHolder("ALEXEY PETROV");
+    request.setExpirationDate(LocalDate.of(2028, 5, 1));
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(paymentCardRepository.countByUserId(1L)).thenReturn(4L);
+    when(paymentCardMapper.toEntity(request)).thenReturn(card);
+    when(paymentCardRepository.save(card)).thenReturn(card);
+    when(paymentCardMapper.toDto(card)).thenReturn(cardResponseDto);
+
+    PaymentCardResponseDto result = paymentCardService.create(request);
+
+    assertThat(result.getUserId()).isEqualTo(1L);
+    verify(paymentCardRepository).save(card);
   }
 
   @Test

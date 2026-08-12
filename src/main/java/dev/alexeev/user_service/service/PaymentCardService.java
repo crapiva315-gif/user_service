@@ -4,6 +4,7 @@ import dev.alexeev.user_service.dto.card.*;
 import dev.alexeev.user_service.entity.PaymentCard;
 import dev.alexeev.user_service.entity.User;
 import dev.alexeev.user_service.exception.InactiveUserException;
+import dev.alexeev.user_service.exception.MaxCardsLimitExceededException;
 import dev.alexeev.user_service.exception.PaymentCardNotFoundException;
 import dev.alexeev.user_service.exception.UserNotFoundException;
 import dev.alexeev.user_service.mapper.PaymentCardMapper;
@@ -19,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class PaymentCardService {
-
+  private static final int MAX_CARDS_PER_USER = 5;
   private static final String USER_WITH_CARDS_CACHE = "userWithCards";
 
   private final PaymentCardRepository paymentCardRepository;
@@ -50,6 +51,10 @@ public class PaymentCardService {
 
     if (!user.isActive()) {
       throw new InactiveUserException(user.getId());
+    }
+
+    if (paymentCardRepository.countByUserId(request.getUserId()) >= MAX_CARDS_PER_USER) {
+      throw new MaxCardsLimitExceededException(request.getUserId());
     }
 
     PaymentCard card = paymentCardMapper.toEntity(request);
