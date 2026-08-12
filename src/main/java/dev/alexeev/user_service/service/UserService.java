@@ -66,6 +66,22 @@ public class UserService {
 
   @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#id")
   @Transactional
+  public void activate(Long id) {
+    User user = userRepository.findById(id)
+            .orElseThrow(() -> new UserNotFoundException(id));
+    user.setActive(true);
+  }
+
+  @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#id")
+  @Transactional
+  public void deactivate(Long id) {
+    User user = userRepository.findById(id)
+            .orElseThrow(() -> new UserNotFoundException(id));
+    user.setActive(false);
+  }
+
+  @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#id")
+  @Transactional
   public void delete(Long id) {
     if (!userRepository.existsById(id)) {
       throw new UserNotFoundException(id);

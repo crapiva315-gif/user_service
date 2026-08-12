@@ -86,7 +86,6 @@ class UserIntegrationTest {
     updateRequest.setSurname("Updated");
     updateRequest.setEmail("integration-test@example.com");
     updateRequest.setBirthDate(LocalDate.of(1995, 3, 12));
-    updateRequest.setActive(true);
 
     mockMvc.perform(put("/api/v1/users/{id}", userId)
                     .contentType("application/json")
@@ -207,5 +206,44 @@ class UserIntegrationTest {
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(sixthCard)))
             .andExpect(status().isConflict());
+  }
+
+  @Test
+  void deactivateUser_shouldPreventAddingNewCard() throws Exception {
+    UserCreateRequest userRequest = new UserCreateRequest();
+    userRequest.setName("Deactivated");
+    userRequest.setSurname("User");
+    userRequest.setEmail("deactivated.user@example.com");
+    userRequest.setBirthDate(LocalDate.of(1990, 1, 1));
+
+    String userResponse = mockMvc.perform(post("/api/v1/users")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(userRequest)))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+
+    Long userId = objectMapper.readTree(userResponse).get("id").asLong();
+
+    mockMvc.perform(patch("/api/v1/users/{id}/deactivate", userId))
+            .andExpect(status().isOk());
+
+    PaymentCardCreateRequest cardRequest = new PaymentCardCreateRequest();
+    cardRequest.setUserId(userId);
+    cardRequest.setNumber("4111111111111188");
+    cardRequest.setHolder("DEACTIVATED USER");
+    cardRequest.setExpirationDate(LocalDate.of(2028, 5, 1));
+
+    mockMvc.perform(post("/api/v1/cards")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(cardRequest)))
+            .andExpect(status().isConflict());
+
+    mockMvc.perform(patch("/api/v1/users/{id}/activate", userId))
+            .andExpect(status().isOk());
+
+    mockMvc.perform(post("/api/v1/cards")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(cardRequest)))
+            .andExpect(status().isCreated());
   }
 }

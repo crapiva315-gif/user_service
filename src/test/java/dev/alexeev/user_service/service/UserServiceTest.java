@@ -137,7 +137,6 @@ class UserServiceTest {
     request.setName("Updated");
     request.setSurname("Petrov");
     request.setEmail("alexey@example.com");
-    request.setActive(true);
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(user));
     when(userMapper.toDto(user)).thenReturn(userResponseDto);
@@ -153,6 +152,42 @@ class UserServiceTest {
     when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> userService.update(999L, request))
+            .isInstanceOf(UserNotFoundException.class);
+  }
+
+  @Test
+  void activate_shouldSetActiveTrue_whenUserExists() {
+    user.setActive(false);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+    userService.activate(1L);
+
+    assertThat(user.isActive()).isTrue();
+  }
+
+  @Test
+  void activate_shouldThrowException_whenUserNotFound() {
+    when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> userService.activate(999L))
+            .isInstanceOf(UserNotFoundException.class);
+  }
+
+  @Test
+  void deactivate_shouldSetActiveFalse_whenUserExists() {
+    user.setActive(true);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+    userService.deactivate(1L);
+
+    assertThat(user.isActive()).isFalse();
+  }
+
+  @Test
+  void deactivate_shouldThrowException_whenUserNotFound() {
+    when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> userService.deactivate(999L))
             .isInstanceOf(UserNotFoundException.class);
   }
 

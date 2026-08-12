@@ -20,7 +20,4 @@ public class PaymentCardUpdateRequest {
   @NotNull(message = "Expiration date is required")
   @Future(message = "Expiration date must be in the future")
   private LocalDate expirationDate;
-
-  @NotNull(message = "Active field is required")
-  private Boolean active;
 }
