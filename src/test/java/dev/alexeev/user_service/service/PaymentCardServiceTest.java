@@ -149,6 +149,44 @@ class PaymentCardServiceTest {
   }
 
   @Test
+  void activate_shouldSetActiveTrue_andReturnOwnerUserId_whenCardExists() {
+    card.setActive(false);
+    when(paymentCardRepository.findById(1L)).thenReturn(Optional.of(card));
+
+    Long returnedUserId = paymentCardService.activate(1L);
+
+    assertThat(card.isActive()).isTrue();
+    assertThat(returnedUserId).isEqualTo(1L);
+  }
+
+  @Test
+  void activate_shouldThrowException_whenCardNotFound() {
+    when(paymentCardRepository.findById(999L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> paymentCardService.activate(999L))
+            .isInstanceOf(PaymentCardNotFoundException.class);
+  }
+
+  @Test
+  void deactivate_shouldSetActiveFalse_andReturnOwnerUserId_whenCardExists() {
+    card.setActive(true);
+    when(paymentCardRepository.findById(1L)).thenReturn(Optional.of(card));
+
+    Long returnedUserId = paymentCardService.deactivate(1L);
+
+    assertThat(card.isActive()).isFalse();
+    assertThat(returnedUserId).isEqualTo(1L);
+  }
+
+  @Test
+  void deactivate_shouldThrowException_whenCardNotFound() {
+    when(paymentCardRepository.findById(999L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> paymentCardService.deactivate(999L))
+            .isInstanceOf(PaymentCardNotFoundException.class);
+  }
+
+  @Test
   void getById_shouldThrowException_whenCardNotFound() {
     when(paymentCardRepository.findById(999L)).thenReturn(Optional.empty());
 

@@ -73,6 +73,24 @@ public class PaymentCardService {
 
   @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#result")
   @Transactional
+  public Long activate(Long id) {
+    PaymentCard card = paymentCardRepository.findById(id)
+            .orElseThrow(() -> new PaymentCardNotFoundException(id));
+    card.setActive(true);
+    return card.getUser().getId();
+  }
+
+  @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#result")
+  @Transactional
+  public Long deactivate(Long id) {
+    PaymentCard card = paymentCardRepository.findById(id)
+            .orElseThrow(() -> new PaymentCardNotFoundException(id));
+    card.setActive(false);
+    return card.getUser().getId();
+  }
+
+  @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#result")
+  @Transactional
   public Long delete(Long id) {
     PaymentCard card = paymentCardRepository.findById(id)
             .orElseThrow(() -> new PaymentCardNotFoundException(id));

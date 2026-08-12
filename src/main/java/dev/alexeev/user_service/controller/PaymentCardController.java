@@ -42,11 +42,21 @@ public class PaymentCardController {
     return ResponseEntity.ok(paymentCardService.update(id, request));
   }
 
+  @PatchMapping("/{id}/activate")
+  public ResponseEntity<Void> activate(@PathVariable Long id) {
+    paymentCardService.activate(id);
+    return ResponseEntity.ok().build();
+  }
+
+  @PatchMapping("/{id}/deactivate")
+  public ResponseEntity<Void> deactivate(@PathVariable Long id) {
+    paymentCardService.deactivate(id);
+    return ResponseEntity.ok().build();
+  }
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable Long id) {
     paymentCardService.delete(id);
     return ResponseEntity.noContent().build();
   }
-  // delete() теперь возвращает userId — используется исключительно
-  // внутри @CacheEvict(key = "#result"), контроллеру не нужен
 }

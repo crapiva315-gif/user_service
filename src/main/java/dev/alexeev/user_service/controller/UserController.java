@@ -50,6 +50,18 @@ public class UserController {
     return ResponseEntity.ok(userService.update(id, request));
   }
 
+  @PatchMapping("/{id}/activate")
+  public ResponseEntity<Void> activate(@PathVariable Long id) {
+    userService.activate(id);
+    return ResponseEntity.ok().build();
+  }
+
+  @PatchMapping("/{id}/deactivate")
+  public ResponseEntity<Void> deactivate(@PathVariable Long id) {
+    userService.deactivate(id);
+    return ResponseEntity.ok().build();
+  }
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable Long id) {
     userService.delete(id);
