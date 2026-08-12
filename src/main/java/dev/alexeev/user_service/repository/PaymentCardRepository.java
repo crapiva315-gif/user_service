@@ -1,12 +1,12 @@
 package dev.alexeev.user_service.repository;
 
 import dev.alexeev.user_service.entity.PaymentCard;
-import dev.alexeev.user_service.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
-import java.util.Optional;
-
 public interface PaymentCardRepository extends JpaRepository<PaymentCard, Long> {
-  List<PaymentCard> findByUserId(Long userId);
+  Page<PaymentCard> findByUserId(Long userId, Pageable pageable);
+
+  long countByUserId(Long userId);
 }

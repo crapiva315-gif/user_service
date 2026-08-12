@@ -134,4 +134,37 @@ class UserIntegrationTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.errors.email").exists());
   }
+
+  @Test
+  void getAll_shouldReturnPagedAndFilteredUsers_bySurname() throws Exception {
+    UserCreateRequest first = new UserCreateRequest();
+    first.setName("Ivan");
+    first.setSurname("Sidorov");
+    first.setEmail("ivan.sidorov@example.com");
+    first.setBirthDate(LocalDate.of(1990, 1, 1));
+
+    UserCreateRequest second = new UserCreateRequest();
+    second.setName("Petr");
+    second.setSurname("Ivanov");
+    second.setEmail("petr.ivanov@example.com");
+    second.setBirthDate(LocalDate.of(1990, 1, 1));
+
+    mockMvc.perform(post("/api/v1/users")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(first)))
+            .andExpect(status().isCreated());
+
+    mockMvc.perform(post("/api/v1/users")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(second)))
+            .andExpect(status().isCreated());
+
+    mockMvc.perform(get("/api/v1/users")
+                    .param("surname", "sidorov")
+                    .param("page", "0")
+                    .param("size", "10"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content", hasSize(1)))
+            .andExpect(jsonPath("$.content[0].surname").value("Sidorov"));
+  }
 }

@@ -11,9 +11,15 @@ import dev.alexeev.user_service.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -77,14 +84,18 @@ class UserServiceTest {
   }
 
   @Test
-  void getAll_shouldReturnListOfUsers() {
-    when(userRepository.findAll()).thenReturn(List.of(user));
-    when(userMapper.toDtoList(List.of(user))).thenReturn(List.of(userResponseDto));
+  void getAll_shouldReturnPageOfUsers() {
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<User> userPage = new PageImpl<>(List.of(user), pageable, 1);
 
-    List<UserResponseDto> result = userService.getAll();
+    when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any(), eq(pageable)))
+            .thenReturn(userPage);
+    when(userMapper.toDto(user)).thenReturn(userResponseDto);
 
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getEmail()).isEqualTo("alexey@example.com");
+    Page<UserResponseDto> result = userService.getAll(null, null, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    assertThat(result.getContent().get(0).getEmail()).isEqualTo("alexey@example.com");
   }
 
   @Test

@@ -6,13 +6,14 @@ import dev.alexeev.user_service.exception.DuplicateEmailException;
 import dev.alexeev.user_service.exception.UserNotFoundException;
 import dev.alexeev.user_service.mapper.UserMapper;
 import dev.alexeev.user_service.repository.UserRepository;
+import dev.alexeev.user_service.repository.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,8 +40,10 @@ public class UserService {
   }
 
   @Transactional(readOnly = true)
-  public List<UserResponseDto> getAll() {
-    return userMapper.toDtoList(userRepository.findAll());
+  public Page<UserResponseDto> getAll(String name, String surname, Pageable pageable) {
+    var spec = UserSpecification.withFilters(name, surname);
+    return userRepository.findAll(spec, pageable)
+            .map(userMapper::toDto);
   }
 
   @Transactional

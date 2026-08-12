@@ -16,8 +16,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -117,12 +122,37 @@ class PaymentCardServiceTest {
   }
 
   @Test
-  void delete_shouldDeleteCard_whenCardExists() {
+  void getByUserId_shouldReturnPageOfCards_whenUserExists() {
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<PaymentCard> cardPage = new PageImpl<>(List.of(card), pageable, 1);
+
+    when(userRepository.existsById(1L)).thenReturn(true);
+    when(paymentCardRepository.findByUserId(1L, pageable)).thenReturn(cardPage);
+    when(paymentCardMapper.toDto(card)).thenReturn(cardResponseDto);
+
+    Page<PaymentCardResponseDto> result = paymentCardService.getByUserId(1L, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    assertThat(result.getContent().get(0).getUserId()).isEqualTo(1L);
+  }
+
+  @Test
+  void getByUserId_shouldThrowException_whenUserNotFound() {
+    Pageable pageable = PageRequest.of(0, 10);
+    when(userRepository.existsById(999L)).thenReturn(false);
+
+    assertThatThrownBy(() -> paymentCardService.getByUserId(999L, pageable))
+            .isInstanceOf(UserNotFoundException.class);
+  }
+
+  @Test
+  void delete_shouldDeleteCard_andReturnOwnerUserId_whenCardExists() {
     when(paymentCardRepository.findById(1L)).thenReturn(Optional.of(card));
 
-    paymentCardService.delete(1L);
+    Long returnedUserId = paymentCardService.delete(1L);
 
     verify(paymentCardRepository).deleteById(1L);
+    assertThat(returnedUserId).isEqualTo(1L);
   }
 
   @Test

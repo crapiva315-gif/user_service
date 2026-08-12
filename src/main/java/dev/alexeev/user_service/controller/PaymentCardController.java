@@ -6,11 +6,11 @@ import dev.alexeev.user_service.dto.card.PaymentCardUpdateRequest;
 import dev.alexeev.user_service.service.PaymentCardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/cards")
@@ -25,8 +25,9 @@ public class PaymentCardController {
   }
 
   @GetMapping
-  public ResponseEntity<List<PaymentCardResponseDto>> getByUserId(@RequestParam Long userId) {
-    return ResponseEntity.ok(paymentCardService.getByUserId(userId));
+  public ResponseEntity<Page<PaymentCardResponseDto>> getByUserId(@RequestParam Long userId,
+                                                                    Pageable pageable) {
+    return ResponseEntity.ok(paymentCardService.getByUserId(userId, pageable));
   }
 
   @PostMapping
@@ -46,4 +47,6 @@ public class PaymentCardController {
     paymentCardService.delete(id);
     return ResponseEntity.noContent().build();
   }
+  // delete() теперь возвращает userId — используется исключительно
+  // внутри @CacheEvict(key = "#result"), контроллеру не нужен
 }
