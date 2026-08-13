@@ -99,6 +99,17 @@ class UserServiceTest {
   }
 
   @Test
+  void getByIds_shouldReturnDtosForRequestedIds() {
+    when(userRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(user));
+    when(userMapper.toDtoList(List.of(user))).thenReturn(List.of(userResponseDto));
+
+    List<UserResponseDto> result = userService.getByIds(List.of(1L, 2L));
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getEmail()).isEqualTo("alexey@example.com");
+  }
+
+  @Test
   void create_shouldSaveUser_whenEmailIsUnique() {
     UserCreateRequest request = new UserCreateRequest();
     request.setName("Alexey");
