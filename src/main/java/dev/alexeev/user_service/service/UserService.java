@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -29,6 +31,11 @@ public class UserService {
     User user = userRepository.findById(id)
             .orElseThrow(() -> new UserNotFoundException(id));
     return userMapper.toDto(user);
+  }
+
+  @Transactional(readOnly = true)
+  public List<UserResponseDto> getByIds(List<Long> ids) {
+    return userMapper.toDtoList(userRepository.findAllById(ids));
   }
 
   @Cacheable(value = USER_WITH_CARDS_CACHE, key = "#id")

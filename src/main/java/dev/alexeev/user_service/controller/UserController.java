@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -23,6 +24,11 @@ public class UserController {
   @GetMapping("/{id}")
   public ResponseEntity<UserResponseDto> getById(@PathVariable Long id) {
     return ResponseEntity.ok(userService.getById(id));
+  }
+
+  @GetMapping("/batch")
+  public ResponseEntity<List<UserResponseDto>> getByIds(@RequestParam List<Long> ids) {
+    return ResponseEntity.ok(userService.getByIds(ids));
   }
 
   @GetMapping("/{id}/full")
