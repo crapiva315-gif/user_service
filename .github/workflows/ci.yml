@@ -101,4 +101,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/user_service:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/user_service:${{ github.sha }}
-          path: target/surefire-reports/
