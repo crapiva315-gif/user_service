@@ -58,8 +58,13 @@ public class UserService {
     if (userRepository.findByEmail(request.getEmail()).isPresent()) {
       throw new DuplicateEmailException(request.getEmail());
     }
+
     User user = userMapper.toEntity(request);
-    return userMapper.toDto(userRepository.save(user));
+    user.setId(request.getId());
+    user.setActive(true);
+
+    User saved = userRepository.save(user);
+    return userMapper.toDto(saved);
   }
 
   @CacheEvict(value = USER_WITH_CARDS_CACHE, key = "#id")
