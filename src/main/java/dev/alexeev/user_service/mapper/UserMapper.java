@@ -16,7 +16,7 @@ public interface UserMapper {
 
   List<UserResponseDto> toDtoList(List<User> users);
 
-  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "id")
   @Mapping(target = "active", constant = "true")
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)

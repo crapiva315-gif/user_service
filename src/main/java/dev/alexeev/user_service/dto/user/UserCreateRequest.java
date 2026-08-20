@@ -9,6 +9,9 @@ import java.time.LocalDate;
 @Setter
 public class UserCreateRequest {
 
+  @NotNull(message = "User ID is required")
+  private Long id;
+
   @NotBlank(message = "Name is required")
   @Size(max = 100, message = "Name must not exceed 100 characters")
   private String name;
