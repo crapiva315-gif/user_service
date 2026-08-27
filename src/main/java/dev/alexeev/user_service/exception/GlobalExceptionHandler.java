@@ -45,6 +45,11 @@ public class GlobalExceptionHandler {
     return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
   }
 
+  @ExceptionHandler(ForbiddenAccessException.class)
+  public ResponseEntity<Map<String, Object>> handleForbiddenAccess(ForbiddenAccessException ex) {
+    return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
     Map<String, String> errors = new LinkedHashMap<>();

@@ -4,6 +4,7 @@ import dev.alexeev.user_service.dto.user.UserCreateRequest;
 import dev.alexeev.user_service.dto.user.UserResponseDto;
 import dev.alexeev.user_service.dto.user.UserUpdateRequest;
 import dev.alexeev.user_service.dto.user.UserWithCardsResponseDto;
+import dev.alexeev.user_service.security.AccessGuard;
 import dev.alexeev.user_service.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,19 +21,31 @@ import java.util.List;
 public class UserController {
 
   private final UserService userService;
+  private final AccessGuard accessGuard;
 
   @GetMapping("/{id:[0-9]+}")
-  public ResponseEntity<UserResponseDto> getById(@PathVariable Long id) {
+  public ResponseEntity<UserResponseDto> getById(
+          @PathVariable Long id,
+          @RequestHeader(value = "X-User-Id", required = false) Long callerUserId,
+          @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+    accessGuard.requireSelfOrAdmin(id, callerUserId, callerRole);
     return ResponseEntity.ok(userService.getById(id));
   }
 
   @GetMapping("/batch")
-  public ResponseEntity<List<UserResponseDto>> getByIds(@RequestParam List<Long> ids) {
+  public ResponseEntity<List<UserResponseDto>> getByIds(
+          @RequestParam List<Long> ids,
+          @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+    accessGuard.requireAdmin(callerRole);
     return ResponseEntity.ok(userService.getByIds(ids));
   }
 
   @GetMapping("/{id}/full")
-  public ResponseEntity<UserWithCardsResponseDto> getByIdWithCards(@PathVariable Long id) {
+  public ResponseEntity<UserWithCardsResponseDto> getByIdWithCards(
+          @PathVariable Long id,
+          @RequestHeader(value = "X-User-Id", required = false) Long callerUserId,
+          @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+    accessGuard.requireSelfOrAdmin(id, callerUserId, callerRole);
     return ResponseEntity.ok(userService.getByIdWithCards(id));
   }
 
@@ -40,7 +53,9 @@ public class UserController {
   public ResponseEntity<Page<UserResponseDto>> getAll(
           @RequestParam(required = false) String name,
           @RequestParam(required = false) String surname,
-          Pageable pageable) {
+          Pageable pageable,
+          @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+    accessGuard.requireAdmin(callerRole);
     return ResponseEntity.ok(userService.getAll(name, surname, pageable));
   }
 
@@ -51,25 +66,39 @@ public class UserController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<UserResponseDto> update(@PathVariable Long id,
-                                                @Valid @RequestBody UserUpdateRequest request) {
+  public ResponseEntity<UserResponseDto> update(
+          @PathVariable Long id,
+          @Valid @RequestBody UserUpdateRequest request,
+          @RequestHeader(value = "X-User-Id", required = false) Long callerUserId,
+          @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+    accessGuard.requireSelfOrAdmin(id, callerUserId, callerRole);
     return ResponseEntity.ok(userService.update(id, request));
   }
 
   @PatchMapping("/{id}/activate")
-  public ResponseEntity<Void> activate(@PathVariable Long id) {
+  public ResponseEntity<Void> activate(
+          @PathVariable Long id,
+          @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+    accessGuard.requireAdmin(callerRole);
     userService.activate(id);
     return ResponseEntity.ok().build();
   }
 
   @PatchMapping("/{id}/deactivate")
-  public ResponseEntity<Void> deactivate(@PathVariable Long id) {
+  public ResponseEntity<Void> deactivate(
+          @PathVariable Long id,
+          @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+    accessGuard.requireAdmin(callerRole);
     userService.deactivate(id);
     return ResponseEntity.ok().build();
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> delete(@PathVariable Long id) {
+  public ResponseEntity<Void> delete(
+          @PathVariable Long id,
+          @RequestHeader(value = "X-User-Id", required = false) Long callerUserId,
+          @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+    accessGuard.requireSelfOrAdmin(id, callerUserId, callerRole);
     userService.delete(id);
     return ResponseEntity.noContent().build();
   }
