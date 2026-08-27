@@ -19,6 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicLong;
 import static org.hamcrest.Matchers.hasSize;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -43,6 +44,10 @@ class UserIntegrationTest {
     registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
   }
 
+  private static final AtomicLong ID_SEQUENCE = new AtomicLong(1);
+  private static final String ADMIN_ROLE_HEADER = "X-User-Role";
+  private static final String ADMIN_ROLE = "ADMIN";
+
   @Autowired
   private MockMvc mockMvc;
   private final ObjectMapper objectMapper = new ObjectMapper()
@@ -51,6 +56,7 @@ class UserIntegrationTest {
   @Test
   void fullFlow_createUser_addCard_getWithCards_update_delete() throws Exception {
     UserCreateRequest createRequest = new UserCreateRequest();
+    createRequest.setId(ID_SEQUENCE.getAndIncrement());
     createRequest.setName("Alexey");
     createRequest.setSurname("Petrov");
     createRequest.setEmail("integration-test@example.com");
@@ -72,11 +78,13 @@ class UserIntegrationTest {
     cardRequest.setExpirationDate(LocalDate.of(2028, 5, 1));
 
     mockMvc.perform(post("/api/v1/cards")
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE)
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(cardRequest)))
             .andExpect(status().isCreated());
 
-    mockMvc.perform(get("/api/v1/users/{id}/full", userId))
+    mockMvc.perform(get("/api/v1/users/{id}/full", userId)
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.cards", hasSize(1)))
             .andExpect(jsonPath("$.cards[0].number").value("4111111111111111"));
@@ -88,21 +96,25 @@ class UserIntegrationTest {
     updateRequest.setBirthDate(LocalDate.of(1995, 3, 12));
 
     mockMvc.perform(put("/api/v1/users/{id}", userId)
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE)
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(updateRequest)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.surname").value("Updated"));
 
-    mockMvc.perform(delete("/api/v1/users/{id}", userId))
+    mockMvc.perform(delete("/api/v1/users/{id}", userId)
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE))
             .andExpect(status().isNoContent());
 
-    mockMvc.perform(get("/api/v1/users/{id}", userId))
+    mockMvc.perform(get("/api/v1/users/{id}", userId)
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE))
             .andExpect(status().isNotFound());
   }
 
   @Test
   void createUser_shouldReturnConflict_whenEmailDuplicate() throws Exception {
     UserCreateRequest request = new UserCreateRequest();
+    request.setId(ID_SEQUENCE.getAndIncrement());
     request.setName("Test");
     request.setSurname("User");
     request.setEmail("duplicate@example.com");
@@ -113,6 +125,7 @@ class UserIntegrationTest {
                     .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated());
 
+    request.setId(ID_SEQUENCE.getAndIncrement());
     mockMvc.perform(post("/api/v1/users")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(request)))
@@ -122,6 +135,7 @@ class UserIntegrationTest {
   @Test
   void createUser_shouldReturnBadRequest_whenEmailInvalid() throws Exception {
     UserCreateRequest request = new UserCreateRequest();
+    request.setId(ID_SEQUENCE.getAndIncrement());
     request.setName("Test");
     request.setSurname("User");
     request.setEmail("not-an-email");
@@ -137,12 +151,14 @@ class UserIntegrationTest {
   @Test
   void getAll_shouldReturnPagedAndFilteredUsers_bySurname() throws Exception {
     UserCreateRequest first = new UserCreateRequest();
+    first.setId(ID_SEQUENCE.getAndIncrement());
     first.setName("Ivan");
     first.setSurname("Sidorov");
     first.setEmail("ivan.sidorov@example.com");
     first.setBirthDate(LocalDate.of(1990, 1, 1));
 
     UserCreateRequest second = new UserCreateRequest();
+    second.setId(ID_SEQUENCE.getAndIncrement());
     second.setName("Petr");
     second.setSurname("Ivanov");
     second.setEmail("petr.ivanov@example.com");
@@ -158,7 +174,9 @@ class UserIntegrationTest {
                     .content(objectMapper.writeValueAsString(second)))
             .andExpect(status().isCreated());
 
+    // getAll is admin-only now.
     mockMvc.perform(get("/api/v1/users")
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE)
                     .param("surname", "sidorov")
                     .param("page", "0")
                     .param("size", "10"))
@@ -170,6 +188,7 @@ class UserIntegrationTest {
   @Test
   void createCard_shouldReturnConflict_whenUserAlreadyHasFiveCards() throws Exception {
     UserCreateRequest userRequest = new UserCreateRequest();
+    userRequest.setId(ID_SEQUENCE.getAndIncrement());
     userRequest.setName("Card");
     userRequest.setSurname("Limit");
     userRequest.setEmail("card.limit@example.com");
@@ -191,6 +210,7 @@ class UserIntegrationTest {
       cardRequest.setExpirationDate(LocalDate.of(2028, 5, 1));
 
       mockMvc.perform(post("/api/v1/cards")
+                      .header(ADMIN_ROLE_HEADER, ADMIN_ROLE)
                       .contentType("application/json")
                       .content(objectMapper.writeValueAsString(cardRequest)))
               .andExpect(status().isCreated());
@@ -203,6 +223,7 @@ class UserIntegrationTest {
     sixthCard.setExpirationDate(LocalDate.of(2028, 5, 1));
 
     mockMvc.perform(post("/api/v1/cards")
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE)
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(sixthCard)))
             .andExpect(status().isConflict());
@@ -211,6 +232,7 @@ class UserIntegrationTest {
   @Test
   void deactivateUser_shouldPreventAddingNewCard() throws Exception {
     UserCreateRequest userRequest = new UserCreateRequest();
+    userRequest.setId(ID_SEQUENCE.getAndIncrement());
     userRequest.setName("Deactivated");
     userRequest.setSurname("User");
     userRequest.setEmail("deactivated.user@example.com");
@@ -224,7 +246,9 @@ class UserIntegrationTest {
 
     Long userId = objectMapper.readTree(userResponse).get("id").asLong();
 
-    mockMvc.perform(patch("/api/v1/users/{id}/deactivate", userId))
+    // activate/deactivate are admin-only now.
+    mockMvc.perform(patch("/api/v1/users/{id}/deactivate", userId)
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE))
             .andExpect(status().isOk());
 
     PaymentCardCreateRequest cardRequest = new PaymentCardCreateRequest();
@@ -234,14 +258,17 @@ class UserIntegrationTest {
     cardRequest.setExpirationDate(LocalDate.of(2028, 5, 1));
 
     mockMvc.perform(post("/api/v1/cards")
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE)
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(cardRequest)))
             .andExpect(status().isConflict());
 
-    mockMvc.perform(patch("/api/v1/users/{id}/activate", userId))
+    mockMvc.perform(patch("/api/v1/users/{id}/activate", userId)
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE))
             .andExpect(status().isOk());
 
     mockMvc.perform(post("/api/v1/cards")
+                    .header(ADMIN_ROLE_HEADER, ADMIN_ROLE)
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(cardRequest)))
             .andExpect(status().isCreated());

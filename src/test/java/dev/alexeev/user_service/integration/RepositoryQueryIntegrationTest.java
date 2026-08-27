@@ -16,6 +16,7 @@ import dev.alexeev.user_service.config.JpaAuditingConfig;
 import org.springframework.context.annotation.Import;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
@@ -27,6 +28,8 @@ class RepositoryQueryIntegrationTest {
   @Container
   @ServiceConnection
   static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+
+  private static final AtomicLong ID_SEQUENCE = new AtomicLong(1);
 
   @Autowired
   private UserRepository userRepository;
@@ -97,6 +100,7 @@ class RepositoryQueryIntegrationTest {
 
   private User newUser(String name, String surname, String email, boolean active) {
     User user = new User();
+    user.setId(ID_SEQUENCE.getAndIncrement());
     user.setName(name);
     user.setSurname(surname);
     user.setEmail(email);
